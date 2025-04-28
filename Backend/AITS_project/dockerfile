@@ -1,0 +1,31 @@
+# Use an official lightweight Python image
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set working directory inside container
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends gcc libpq-dev \
+  && apt-get clean
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Copy project files
+COPY . .
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Expose port (optional: Django typically runs on 8000 inside container)
+EXPOSE 8000
+
+# Start Gunicorn server
+CMD ["gunicorn", "AITS_project.wsgi:application", "--bind", "0.0.0.0:8000"]
